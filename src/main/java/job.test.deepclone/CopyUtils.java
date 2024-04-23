@@ -26,7 +26,6 @@ public class CopyUtils {
         T copy = (T) clazz.newInstance();
         // Добавляем объект в список скопированных
         copiedObjects.put(object, copy);
-
         // Рекурсивно копируем поля объекта
         copyFields(object, copy);
 
@@ -39,56 +38,72 @@ public class CopyUtils {
         while (cl != null) {
             final Field[] fields = cl.getDeclaredFields();
             for (Field field : fields) {
-                field.setAccessible(true);
-
-                // Получаем значение поля source
-                final Object value = field.get(source);
-
-                if (value != null) {
-                    // Если поле является массивом
-                    if (value.getClass().isArray()) {
-                        int length = Array.getLength(value);
-                        final Object newArray = Array.newInstance(value.getClass().getComponentType(), length);
-                        for (int i = 0; i < length; i++) {
-                            final Object arrayElement = Array.get(value, i);
-                            if (arrayElement != null && arrayElement.getClass().isArray()) {
-                                // Если элемент массива является массивом, рекурсивно копируем его
-                                Array.set(newArray, i, deepCopy(arrayElement));
-                            } else {
-                                // Иначе просто копируем элемент
-                                Array.set(newArray, i, arrayElement);
-                            }
-                        }
-                        field.set(destination, newArray);
-                    }
-                    // Если поле является коллекцией
-                    else if (value instanceof Collection) {
-                        final Collection<?> sourceCollection = (Collection<?>) value;
-                        final Collection<Object> destinationCollection = createNewCollectionInstance(value);
-                        for (Object element : sourceCollection) {
-                            if (element != null && element.getClass().isArray()) {
-                                // Если элемент коллекции является массивом, рекурсивно копируем его
-                                destinationCollection.add(deepCopy(element));
-                            } else {
-                                // Иначе просто копируем элемент
-                                destinationCollection.add(element);
-                            }
-                        }
-                        field.set(destination, destinationCollection);
-                    }
-                    // Если поле является объектом
-                    else if (!field.getType().isPrimitive() && !(value instanceof String)) {
-                        // Рекурсивно копируем объект
-                        field.set(destination, deepCopy(value));
-                    } else {
-                        // Просто копируем значение поля
-                        field.set(destination, value);
-                    }
-                }
+              field.setAccessible(true);
+              copyField(field, source, destination);
             }
             cl = cl.getSuperclass();
         }
+    }
 
+    private static void copyField (Field field, Object source, final Object destination) throws IllegalAccessException, InstantiationException {
+        // Получаем значение поля source
+        final Object value = field.get(source);
+        if (value != null) {
+            // Если поле является массивом
+            if (value.getClass().isArray()) {
+                Object newArray =deepCopyArray(value, field.getType());
+                field.set(destination, newArray);
+            }
+            // Если поле является коллекцией
+            else if (value instanceof Collection) {
+                Collection destinationCollection = deepCopyCollection(value, field.getType());
+                field.set(destination, destinationCollection);
+            }
+            // Если поле является объектом
+            else if (!field.getType().isPrimitive() && !(value instanceof String)) {
+                // Рекурсивно копируем объект
+                field.set(destination, deepCopy(value));
+            } else {
+                // Просто копируем значение поля
+                field.set(destination, value);
+            }
+        }
+    }
+
+    private static Object deepCopyArray(Object value, Class<?>type) throws IllegalAccessException, InstantiationException {
+        int length = Array.getLength(value);
+        final Object newArray = Array.newInstance(value.getClass().getComponentType(), length);
+        for (int i = 0; i < length; i++) {
+            final Object arrayElement = Array.get(value, i);
+            if (arrayElement != null && (!type.isPrimitive() && !(arrayElement instanceof String) && !(arrayElement instanceof Number) )) {
+                // Если элемент массива является массивом, рекурсивно копируем егоu
+                try {
+                    Array.set(newArray, i, deepCopy(arrayElement));
+                }catch (Exception e) {
+                    int a=0;
+                }
+            } else {
+                // Иначе просто копируем элемент
+                Array.set(newArray, i, arrayElement);
+            }
+        }
+        return newArray;
+    }
+
+    private static Collection deepCopyCollection (Object value, Class<?>type) throws IllegalAccessException, InstantiationException {
+        final Collection<?> sourceCollection = (Collection<?>) value;
+        final Collection<Object> destinationCollection = createNewCollectionInstance(value);
+        for (Object element : sourceCollection) {
+            if (element != null && (!type.isPrimitive() && !(element instanceof String) && !(element instanceof Number))) {
+                 //Если элемент коллекции является массивом, рекурсивно копируем его
+                destinationCollection.add(deepCopy(element));
+
+            } else {
+                // Иначе просто копируем элемент
+                destinationCollection.add(element);
+            }
+        }
+        return destinationCollection;
     }
 
     private static Collection<Object> createNewCollectionInstance(final Object value) {

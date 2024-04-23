@@ -5,10 +5,23 @@ import java.util.List;
 class  Man <T>{
     private String name;
     private int age;
+
+    public List<Man> getNumbers() {
+        return numbers;
+    }
+
+    public void setNumbers(List<Man> numbers) {
+        this.numbers = numbers;
+    }
+
     private List<String> favoriteBooks;
+
+    private List<Man> numbers;
 
     private int [] arr;
     T man;
+
+    Man me;
 
     public int[] getArr() {
         return arr;
@@ -25,6 +38,15 @@ class  Man <T>{
     public  Man(){
 
     }
+
+    public Man getMe() {
+        return me;
+    }
+
+    public void setMe(Man me) {
+        this.me = me;
+    }
+
     public Man(String name, int age, List<String> favoriteBooks) {
         this.name = name;
         this.age = age;
