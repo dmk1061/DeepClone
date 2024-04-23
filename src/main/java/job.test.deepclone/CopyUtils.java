@@ -35,55 +35,60 @@ public class CopyUtils {
 
     private static void copyFields(final Object source, final Object destination) throws IllegalAccessException, InstantiationException {
         // Получаем все поля класса, включая приватные
-        final Field[] fields = source.getClass().getDeclaredFields();
-        for (Field field : fields) {
-            field.setAccessible(true);
+        Class cl = source.getClass();
+        while (cl != null) {
+            final Field[] fields = cl.getDeclaredFields();
+            for (Field field : fields) {
+                field.setAccessible(true);
 
-            // Получаем значение поля source
-            final Object value = field.get(source);
+                // Получаем значение поля source
+                final Object value = field.get(source);
 
-            if (value != null) {
-                // Если поле является массивом
-                if (value.getClass().isArray()) {
-                    int length = Array.getLength(value);
-                    final Object newArray = Array.newInstance(value.getClass().getComponentType(), length);
-                    for (int i = 0; i < length; i++) {
-                        final Object arrayElement = Array.get(value, i);
-                        if (arrayElement != null && arrayElement.getClass().isArray()) {
-                            // Если элемент массива является массивом, рекурсивно копируем его
-                            Array.set(newArray, i, deepCopy(arrayElement));
-                        } else {
-                            // Иначе просто копируем элемент
-                            Array.set(newArray, i, arrayElement);
+                if (value != null) {
+                    // Если поле является массивом
+                    if (value.getClass().isArray()) {
+                        int length = Array.getLength(value);
+                        final Object newArray = Array.newInstance(value.getClass().getComponentType(), length);
+                        for (int i = 0; i < length; i++) {
+                            final Object arrayElement = Array.get(value, i);
+                            if (arrayElement != null && arrayElement.getClass().isArray()) {
+                                // Если элемент массива является массивом, рекурсивно копируем его
+                                Array.set(newArray, i, deepCopy(arrayElement));
+                            } else {
+                                // Иначе просто копируем элемент
+                                Array.set(newArray, i, arrayElement);
+                            }
                         }
+                        field.set(destination, newArray);
                     }
-                    field.set(destination, newArray);
-                }
-                // Если поле является коллекцией
-                else if (value instanceof Collection) {
-                    final Collection<?> sourceCollection = (Collection<?>) value;
-                    final Collection<Object> destinationCollection = createNewCollectionInstance(value);
-                    for (Object element : sourceCollection) {
-                        if (element != null && element.getClass().isArray()) {
-                            // Если элемент коллекции является массивом, рекурсивно копируем его
-                            destinationCollection.add(deepCopy(element));
-                        } else {
-                            // Иначе просто копируем элемент
-                            destinationCollection.add(element);
+                    // Если поле является коллекцией
+                    else if (value instanceof Collection) {
+                        final Collection<?> sourceCollection = (Collection<?>) value;
+                        final Collection<Object> destinationCollection = createNewCollectionInstance(value);
+                        for (Object element : sourceCollection) {
+                            if (element != null && element.getClass().isArray()) {
+                                // Если элемент коллекции является массивом, рекурсивно копируем его
+                                destinationCollection.add(deepCopy(element));
+                            } else {
+                                // Иначе просто копируем элемент
+                                destinationCollection.add(element);
+                            }
                         }
+                        field.set(destination, destinationCollection);
                     }
-                    field.set(destination, destinationCollection);
-                }
-                // Если поле является объектом
-                else if (!field.getType().isPrimitive() && !(value instanceof String)) {
-                    // Рекурсивно копируем объект
-                    field.set(destination, deepCopy(value));
-                } else {
-                    // Просто копируем значение поля
-                    field.set(destination, value);
+                    // Если поле является объектом
+                    else if (!field.getType().isPrimitive() && !(value instanceof String)) {
+                        // Рекурсивно копируем объект
+                        field.set(destination, deepCopy(value));
+                    } else {
+                        // Просто копируем значение поля
+                        field.set(destination, value);
+                    }
                 }
             }
+            cl = cl.getSuperclass();
         }
+
     }
 
     private static Collection<Object> createNewCollectionInstance(final Object value) {

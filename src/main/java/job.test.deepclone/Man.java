@@ -2,23 +2,27 @@ package job.test.deepclone;
 
 import java.util.List;
 
-class Man {
+class  Man <T>{
     private String name;
     private int age;
     private List<String> favoriteBooks;
 
-    private final int [] arr = new int[]{1, 3, 7};
-    Man man;
+    private int [] arr;
+    T man;
 
-    public Man getMan() {
+    public int[] getArr() {
+        return arr;
+    }
+
+    public T getMan() {
         return man;
     }
 
-    public void setMan(Man man) {
+    public void setMan(T man) {
         this.man = man;
     }
 
-    public Man(){
+    public  Man(){
 
     }
     public Man(String name, int age, List<String> favoriteBooks) {
@@ -51,4 +55,7 @@ class Man {
         this.favoriteBooks = favoriteBooks;
     }
 
+    public void setArr(int[] arr) {
+        this.arr = arr;
+    }
 }
